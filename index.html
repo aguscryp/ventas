@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sistema de Ventas</title>
+  <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js"></script>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .hidden { display: none; }
+    input, button { margin: 5px 0; padding: 8px; width: 100%; }
+    .cliente { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h2>Sistema de Ventas</h2>
+
+  <div id="login">
+    <input type="email" id="email" placeholder="Correo" />
+    <input type="password" id="password" placeholder="Contraseña" />
+    <button onclick="login()">Ingresar</button>
+  </div>
+
+  <div id="formulario" class="hidden">
+    <h3>Cargar Cliente</h3>
+    <input type="text" id="nombre" placeholder="Nombre del cliente" />
+    <input type="text" id="whatsapp" placeholder="WhatsApp del cliente" />
+    <button onclick="cargarCliente()">Guardar Cliente</button>
+  </div>
+
+  <div id="panelAdmin" class="hidden">
+    <h3>Panel de Administración</h3>
+    <div id="listaClientes"></div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCpLMxmpWHPKS2sHQjLe7ySQQV5p8d7nQc",
+      authDomain: "gestionclientes-3fe24.firebaseapp.com",
+      projectId: "gestionclientes-3fe24",
+      storageBucket: "gestionclientes-3fe24.firebasestorage.app",
+      messagingSenderId: "1020139023649",
+      appId: "1:1020139023649:web:e1185ff32d907aac96a260",
+      measurementId: "G-0W7BV8MF10"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const loginDiv = document.getElementById("login");
+    const formDiv = document.getElementById("formulario");
+    const adminDiv = document.getElementById("panelAdmin");
+    const listaClientes = document.getElementById("listaClientes");
+
+    function login() {
+      const email = document.getElementById("email").value;
+      const pass = document.getElementById("password").value;
+      auth.signInWithEmailAndPassword(email, pass)
+        .then(user => {
+          loginDiv.classList.add("hidden");
+          formDiv.classList.remove("hidden");
+          if (email === "agus@gmail.com") {
+            adminDiv.classList.remove("hidden");
+            cargarClientes();
+          }
+        })
+        .catch(err => alert("Error: " + err.message));
+    }
+
+    function cargarCliente() {
+      const nombre = document.getElementById("nombre").value;
+      const whatsapp = document.getElementById("whatsapp").value;
+      const fecha = new Date();
+      const cliente = {
+        nombre,
+        whatsapp,
+        monto: 5000,
+        fecha: fecha.toLocaleDateString(),
+        hora: fecha.toLocaleTimeString(),
+        estado: "activo",
+        empleado: auth.currentUser.email,
+        uid_empleado: auth.currentUser.uid
+      };
+      db.collection("clientes").add(cliente)
+        .then(() => alert("Cliente guardado"))
+        .catch(err => alert("Error: " + err.message));
+    }
+
+    function cargarClientes() {
+      db.collection("clientes").orderBy("fecha", "desc").onSnapshot(snapshot => {
+        listaClientes.innerHTML = "";
+        snapshot.forEach(doc => {
+          const c = doc.data();
+          listaClientes.innerHTML += `
+            <div class="cliente">
+              <strong>${c.nombre}</strong><br/>
+              WhatsApp: ${c.whatsapp}<br/>
+              Monto: $${c.monto}<br/>
+              Fecha: ${c.fecha} ${c.hora}<br/>
+              Estado: ${c.estado}<br/>
+              Empleado: ${c.empleado}
+            </div>
+          `;
+        });
+      });
+    }
+  </script>
+</body>
+</html>
