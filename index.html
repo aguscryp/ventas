@@ -3,9 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>Sistema de Ventas</title>
-  <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -34,7 +31,6 @@
       color: white;
       border: none;
       cursor: pointer;
-      transition: background-color 0.3s ease;
     }
     button:hover {
       background-color: #2980b9;
@@ -53,9 +49,6 @@
       border-radius: 6px;
       background-color: #fafafa;
     }
-    .cliente strong {
-      color: #34495e;
-    }
     .error {
       color: red;
       margin-top: 10px;
@@ -69,7 +62,7 @@
     <h3>Ingreso</h3>
     <input type="email" id="email" placeholder="Correo electrónico" />
     <input type="password" id="password" placeholder="Contraseña" />
-    <button onclick="login()">Ingresar</button>
+    <button id="loginBtn">Ingresar</button>
     <div id="errorLogin" class="error hidden"></div>
   </div>
 
@@ -77,7 +70,7 @@
     <h3>Cargar Cliente</h3>
     <input type="text" id="nombre" placeholder="Nombre del cliente" />
     <input type="text" id="whatsapp" placeholder="WhatsApp del cliente" />
-    <button onclick="cargarCliente()">Guardar Cliente</button>
+    <button id="guardarBtn">Guardar Cliente</button>
     <div id="errorCarga" class="error hidden"></div>
   </div>
 
@@ -86,20 +79,24 @@
     <div id="listaClientes"></div>
   </div>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyCpLMxmpWHPKS2sHQjLe7ySQQV5p8d7nQc",
       authDomain: "gestionclientes-3fe24.firebaseapp.com",
       projectId: "gestionclientes-3fe24",
       storageBucket: "gestionclientes-3fe24.firebasestorage.app",
       messagingSenderId: "1020139023649",
-      appId: "1:1020139023649:web:e1185ff32d907aac96a260",
-      measurementId: "G-0W7BV8MF10"
+      appId: "1:1020139023649:web:d694ccc0408969a896a260",
+      measurementId: "G-42JG1J5JKC"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
     const loginDiv = document.getElementById("login");
     const empleadoPanel = document.getElementById("empleadoPanel");
@@ -108,46 +105,42 @@
     const errorLogin = document.getElementById("errorLogin");
     const errorCarga = document.getElementById("errorCarga");
 
-    function login() {
+    document.getElementById("loginBtn").addEventListener("click", async () => {
       const email = document.getElementById("email").value;
       const pass = document.getElementById("password").value;
       errorLogin.classList.add("hidden");
 
-      auth.signInWithEmailAndPassword(email, pass)
-        .then(user => {
-          const uid = user.user.uid;
-          db.collection("usuarios").doc(uid).get().then(doc => {
-            if (!doc.exists) {
-              errorLogin.textContent = "Este usuario no tiene rol asignado.";
-              errorLogin.classList.remove("hidden");
-              return;
-            }
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+        const uid = userCredential.user.uid;
+        const userDoc = await getDoc(doc(db, "usuarios", uid));
 
-            const rol = doc.data().rol;
-            loginDiv.classList.add("hidden");
-
-            if (rol === "admin") {
-              empleadoPanel.classList.remove("hidden");
-              adminPanel.classList.remove("hidden");
-              cargarClientes();
-            } else if (rol === "empleado") {
-              empleadoPanel.classList.remove("hidden");
-            } else {
-              errorLogin.textContent = "Rol desconocido.";
-              errorLogin.classList.remove("hidden");
-            }
-          }).catch(err => {
-            errorLogin.textContent = "Error al verificar rol: " + err.message;
-            errorLogin.classList.remove("hidden");
-          });
-        })
-        .catch(err => {
-          errorLogin.textContent = "Error al iniciar sesión: " + err.message;
+        if (!userDoc.exists()) {
+          errorLogin.textContent = "Este usuario no tiene rol asignado.";
           errorLogin.classList.remove("hidden");
-        });
-    }
+          return;
+        }
 
-    function cargarCliente() {
+        const rol = userDoc.data().rol;
+        loginDiv.classList.add("hidden");
+
+        if (rol === "admin") {
+          empleadoPanel.classList.remove("hidden");
+          adminPanel.classList.remove("hidden");
+          cargarClientes();
+        } else if (rol === "empleado") {
+          empleadoPanel.classList.remove("hidden");
+        } else {
+          errorLogin.textContent = "Rol desconocido.";
+          errorLogin.classList.remove("hidden");
+        }
+      } catch (err) {
+        errorLogin.textContent = "Error al iniciar sesión: " + err.message;
+        errorLogin.classList.remove("hidden");
+      }
+    });
+
+    document.getElementById("guardarBtn").addEventListener("click", async () => {
       const nombre = document.getElementById("nombre").value;
       const whatsapp = document.getElementById("whatsapp").value;
       errorCarga.classList.add("hidden");
@@ -170,22 +163,22 @@
         uid_empleado: auth.currentUser.uid
       };
 
-      db.collection("clientes").add(cliente)
-        .then(() => {
-          alert("Cliente guardado correctamente.");
-          document.getElementById("nombre").value = "";
-          document.getElementById("whatsapp").value = "";
-        })
-        .catch(err => {
-          errorCarga.textContent = "Error al guardar cliente: " + err.message;
-          errorCarga.classList.remove("hidden");
-        });
-    }
+      try {
+        await addDoc(collection(db, "clientes"), cliente);
+        alert("Cliente guardado correctamente.");
+        document.getElementById("nombre").value = "";
+        document.getElementById("whatsapp").value = "";
+      } catch (err) {
+        errorCarga.textContent = "Error al guardar cliente: " + err.message;
+        errorCarga.classList.remove("hidden");
+      }
+    });
 
     function cargarClientes() {
-      db.collection("clientes").orderBy("fecha", "desc").onSnapshot(snapshot => {
+      const q = query(collection(db, "clientes"), orderBy("fecha", "desc"));
+      onSnapshot(q, (snapshot) => {
         listaClientes.innerHTML = "";
-        snapshot.forEach(doc => {
+        snapshot.forEach((doc) => {
           const c = doc.data();
           listaClientes.innerHTML += `
             <div class="cliente">
