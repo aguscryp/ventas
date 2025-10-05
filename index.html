@@ -7,10 +7,11 @@
   <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js"></script>
   <style>
-    body { font-family: Arial; padding: 20px; }
+    body { font-family: Arial; padding: 20px; max-width: 600px; margin: auto; }
     .hidden { display: none; }
     input, button { margin: 5px 0; padding: 8px; width: 100%; }
     .cliente { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+    .admin { background: #f9f9f9; padding: 10px; border: 1px solid #aaa; }
   </style>
 </head>
 <body>
@@ -22,14 +23,14 @@
     <button onclick="login()">Ingresar</button>
   </div>
 
-  <div id="formulario" class="hidden">
-    <h3>Cargar Cliente</h3>
+  <div id="empleadoPanel" class="hidden">
+    <h3>Panel de Empleado</h3>
     <input type="text" id="nombre" placeholder="Nombre del cliente" />
     <input type="text" id="whatsapp" placeholder="WhatsApp del cliente" />
     <button onclick="cargarCliente()">Guardar Cliente</button>
   </div>
 
-  <div id="panelAdmin" class="hidden">
+  <div id="adminPanel" class="hidden">
     <h3>Panel de Administración</h3>
     <div id="listaClientes"></div>
   </div>
@@ -50,21 +51,36 @@
     const db = firebase.firestore();
 
     const loginDiv = document.getElementById("login");
-    const formDiv = document.getElementById("formulario");
-    const adminDiv = document.getElementById("panelAdmin");
+    const empleadoPanel = document.getElementById("empleadoPanel");
+    const adminPanel = document.getElementById("adminPanel");
     const listaClientes = document.getElementById("listaClientes");
 
     function login() {
       const email = document.getElementById("email").value;
       const pass = document.getElementById("password").value;
+
       auth.signInWithEmailAndPassword(email, pass)
         .then(user => {
-          loginDiv.classList.add("hidden");
-          formDiv.classList.remove("hidden");
-          if (email === "agus@gmail.com") {
-            adminDiv.classList.remove("hidden");
-            cargarClientes();
-          }
+          const uid = user.user.uid;
+          db.collection("usuarios").doc(uid).get().then(doc => {
+            if (!doc.exists) {
+              alert("Usuario sin rol asignado.");
+              return;
+            }
+
+            const rol = doc.data().rol;
+            loginDiv.classList.add("hidden");
+
+            if (rol === "admin") {
+              adminPanel.classList.remove("hidden");
+              empleadoPanel.classList.remove("hidden");
+              cargarClientes();
+            } else if (rol === "empleado") {
+              empleadoPanel.classList.remove("hidden");
+            } else {
+              alert("Rol desconocido.");
+            }
+          });
         })
         .catch(err => alert("Error: " + err.message));
     }
@@ -94,7 +110,7 @@
         snapshot.forEach(doc => {
           const c = doc.data();
           listaClientes.innerHTML += `
-            <div class="cliente">
+            <div class="cliente admin">
               <strong>${c.nombre}</strong><br/>
               WhatsApp: ${c.whatsapp}<br/>
               Monto: $${c.monto}<br/>
