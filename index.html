@@ -56,6 +56,10 @@
     .cliente strong {
       color: #34495e;
     }
+    .error {
+      color: red;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -66,6 +70,7 @@
     <input type="email" id="email" placeholder="Correo electrónico" />
     <input type="password" id="password" placeholder="Contraseña" />
     <button onclick="login()">Ingresar</button>
+    <div id="errorLogin" class="error hidden"></div>
   </div>
 
   <div id="empleadoPanel" class="panel hidden">
@@ -73,6 +78,7 @@
     <input type="text" id="nombre" placeholder="Nombre del cliente" />
     <input type="text" id="whatsapp" placeholder="WhatsApp del cliente" />
     <button onclick="cargarCliente()">Guardar Cliente</button>
+    <div id="errorCarga" class="error hidden"></div>
   </div>
 
   <div id="adminPanel" class="panel hidden">
@@ -99,17 +105,21 @@
     const empleadoPanel = document.getElementById("empleadoPanel");
     const adminPanel = document.getElementById("adminPanel");
     const listaClientes = document.getElementById("listaClientes");
+    const errorLogin = document.getElementById("errorLogin");
+    const errorCarga = document.getElementById("errorCarga");
 
     function login() {
       const email = document.getElementById("email").value;
       const pass = document.getElementById("password").value;
+      errorLogin.classList.add("hidden");
 
       auth.signInWithEmailAndPassword(email, pass)
         .then(user => {
           const uid = user.user.uid;
           db.collection("usuarios").doc(uid).get().then(doc => {
             if (!doc.exists) {
-              alert("Este usuario no tiene rol asignado en Firestore.");
+              errorLogin.textContent = "Este usuario no tiene rol asignado.";
+              errorLogin.classList.remove("hidden");
               return;
             }
 
@@ -123,18 +133,28 @@
             } else if (rol === "empleado") {
               empleadoPanel.classList.remove("hidden");
             } else {
-              alert("Rol desconocido.");
+              errorLogin.textContent = "Rol desconocido.";
+              errorLogin.classList.remove("hidden");
             }
+          }).catch(err => {
+            errorLogin.textContent = "Error al verificar rol: " + err.message;
+            errorLogin.classList.remove("hidden");
           });
         })
-        .catch(err => alert("Error al iniciar sesión: " + err.message));
+        .catch(err => {
+          errorLogin.textContent = "Error al iniciar sesión: " + err.message;
+          errorLogin.classList.remove("hidden");
+        });
     }
 
     function cargarCliente() {
       const nombre = document.getElementById("nombre").value;
       const whatsapp = document.getElementById("whatsapp").value;
+      errorCarga.classList.add("hidden");
+
       if (!nombre || !whatsapp) {
-        alert("Por favor completá todos los campos.");
+        errorCarga.textContent = "Por favor completá todos los campos.";
+        errorCarga.classList.remove("hidden");
         return;
       }
 
@@ -156,7 +176,10 @@
           document.getElementById("nombre").value = "";
           document.getElementById("whatsapp").value = "";
         })
-        .catch(err => alert("Error al guardar cliente: " + err.message));
+        .catch(err => {
+          errorCarga.textContent = "Error al guardar cliente: " + err.message;
+          errorCarga.classList.remove("hidden");
+        });
     }
 
     function cargarClientes() {
@@ -180,3 +203,4 @@
   </script>
 </body>
 </html>
+
