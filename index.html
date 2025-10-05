@@ -2,87 +2,147 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Sistema de Ventas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gestión de Clientes</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f4f6f8;
       margin: 0;
-      padding: 20px;
-      max-width: 600px;
-      margin: auto;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f6f9;
+      color: #333;
     }
-    h2, h3 {
-      color: #2c3e50;
-    }
-    .hidden {
-      display: none;
-    }
-    input, button {
-      margin: 8px 0;
-      padding: 10px;
-      width: 100%;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-    }
-    button {
-      background-color: #3498db;
+    header {
+      background: #2c3e50;
       color: white;
-      border: none;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .menu-toggle {
+      font-size: 1.5rem;
       cursor: pointer;
     }
-    button:hover {
-      background-color: #2980b9;
+    nav {
+      position: fixed;
+      top: 0;
+      left: -250px;
+      width: 250px;
+      height: 100%;
+      background: #34495e;
+      color: white;
+      padding-top: 60px;
+      transition: left 0.3s ease;
+      box-shadow: 4px 0 10px rgba(0,0,0,0.3);
     }
-    .panel {
-      background-color: white;
-      padding: 20px;
-      margin-top: 20px;
+    nav.active {
+      left: 0;
+    }
+    nav a {
+      display: block;
+      padding: 1rem;
+      color: white;
+      text-decoration: none;
+      border-bottom: 1px solid #2c3e50;
+    }
+    .section {
+      padding: 2rem;
+      display: none;
+    }
+    .section.active {
+      display: block;
+    }
+    .card {
+      background: white;
+      padding: 1rem;
+      margin-bottom: 1rem;
       border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
-    .cliente {
-      border: 1px solid #ddd;
-      padding: 15px;
-      margin: 10px 0;
-      border-radius: 6px;
-      background-color: #fafafa;
+    #loginModal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
     }
-    .error {
-      color: red;
-      margin-top: 10px;
+    #loginBox {
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      text-align: center;
+    }
+    input, button {
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      background: #2c3e50;
+      color: white;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <h2>Sistema de Ventas</h2>
-
-  <div id="login" class="panel">
-    <h3>Ingreso</h3>
-    <input type="email" id="email" placeholder="Correo electrónico" />
-    <input type="password" id="password" placeholder="Contraseña" />
-    <button id="loginBtn">Ingresar</button>
-    <div id="errorLogin" class="error hidden"></div>
+  <div id="loginModal">
+    <div id="loginBox">
+      <h2>Iniciar sesión</h2>
+      <input type="email" id="email" placeholder="Correo electrónico" />
+      <input type="password" id="password" placeholder="Contraseña" />
+      <button onclick="login()">Acceder</button>
+      <p id="loginError" style="color:red;"></p>
+    </div>
   </div>
 
-  <div id="empleadoPanel" class="panel hidden">
-    <h3>Cargar Cliente</h3>
-    <input type="text" id="nombre" placeholder="Nombre del cliente" />
-    <input type="text" id="whatsapp" placeholder="WhatsApp del cliente" />
-    <button id="guardarBtn">Guardar Cliente</button>
-    <div id="errorCarga" class="error hidden"></div>
-  </div>
+  <header>
+    <div class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></div>
+    <h1>Gestión de Clientes</h1>
+  </header>
 
-  <div id="adminPanel" class="panel hidden">
-    <h3>Panel de Administración</h3>
-    <div id="listaClientes"></div>
-  </div>
+  <nav id="sidebar">
+    <a href="#" onclick="showSection('clientes')"><i class="fas fa-user-plus"></i> Clientes</a>
+    <a href="#" onclick="showSection('jornada')"><i class="fas fa-clock"></i> Jornada</a>
+    <a href="#" onclick="showSection('pendientes')"><i class="fas fa-phone"></i> Pendientes</a>
+  </nav>
+
+  <main>
+    <section id="clientes" class="section">
+      <h2>Clientes</h2>
+      <div class="card">
+        <input type="text" id="clienteNombre" placeholder="Nombre del cliente" />
+        <button onclick="agregarCliente()">Agregar Cliente</button>
+        <p id="clienteError" style="color:red;"></p>
+      </div>
+      <div id="listaClientes"></div>
+    </section>
+
+    <section id="jornada" class="section">
+      <h2>Jornada</h2>
+      <div class="card">
+        <button onclick="iniciarJornada()">Iniciar Jornada</button>
+        <button onclick="terminarJornada()">Terminar Jornada</button>
+        <p id="estadoJornada">No has iniciado jornada.</p>
+      </div>
+    </section>
+
+    <section id="pendientes" class="section">
+      <h2>Pendientes</h2>
+      <div id="listaPendientes"></div>
+    </section>
+  </main>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCpLMxmpWHPKS2sHQjLe7ySQQV5p8d7nQc",
@@ -95,102 +155,83 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    const analytics = getAnalytics(app);
+  </script>
 
-    const loginDiv = document.getElementById("login");
-    const empleadoPanel = document.getElementById("empleadoPanel");
-    const adminPanel = document.getElementById("adminPanel");
-    const listaClientes = document.getElementById("listaClientes");
-    const errorLogin = document.getElementById("errorLogin");
-    const errorCarga = document.getElementById("errorCarga");
+  <script>
+    let usuario = null;
+    let jornadaActiva = false;
+    const clientes = [];
+    const pendientes = [];
 
-    document.getElementById("loginBtn").addEventListener("click", async () => {
+    function login() {
       const email = document.getElementById("email").value;
       const pass = document.getElementById("password").value;
-      errorLogin.classList.add("hidden");
-
-      try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-        const uid = userCredential.user.uid;
-        const userDoc = await getDoc(doc(db, "usuarios", uid));
-
-        if (!userDoc.exists()) {
-          errorLogin.textContent = "Este usuario no tiene rol asignado.";
-          errorLogin.classList.remove("hidden");
-          return;
-        }
-
-        const rol = userDoc.data().rol;
-        loginDiv.classList.add("hidden");
-
-        if (rol === "admin") {
-          empleadoPanel.classList.remove("hidden");
-          adminPanel.classList.remove("hidden");
-          cargarClientes();
-        } else if (rol === "empleado") {
-          empleadoPanel.classList.remove("hidden");
-        } else {
-          errorLogin.textContent = "Rol desconocido.";
-          errorLogin.classList.remove("hidden");
-        }
-      } catch (err) {
-        errorLogin.textContent = "Error al iniciar sesión: " + err.message;
-        errorLogin.classList.remove("hidden");
+      if ((email === "agus@gmail.com" && pass === "47239510") || (email === "mauri@gmail.com" && pass === "socio12345")) {
+        usuario = email;
+        document.getElementById("loginModal").style.display = "none";
+        showSection('clientes');
+      } else {
+        document.getElementById("loginError").innerText = "Credenciales incorrectas.";
       }
-    });
+    }
 
-    document.getElementById("guardarBtn").addEventListener("click", async () => {
-      const nombre = document.getElementById("nombre").value;
-      const whatsapp = document.getElementById("whatsapp").value;
-      errorCarga.classList.add("hidden");
+    function toggleMenu() {
+      document.getElementById("sidebar").classList.toggle("active");
+    }
 
-      if (!nombre || !whatsapp) {
-        errorCarga.textContent = "Por favor completá todos los campos.";
-        errorCarga.classList.remove("hidden");
+    function showSection(id) {
+      document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
+
+    function iniciarJornada() {
+      jornadaActiva = true;
+      document.getElementById("estadoJornada").innerText = "Jornada iniciada.";
+    }
+
+    function terminarJornada() {
+      jornadaActiva = false;
+      document.getElementById("estadoJornada").innerText = "Jornada terminada.";
+    }
+
+    function agregarCliente() {
+      const nombre = document.getElementById("clienteNombre").value;
+      if (!jornadaActiva) {
+        document.getElementById("clienteError").innerText = "Debes iniciar jornada.";
         return;
       }
-
-      const fecha = new Date();
-      const cliente = {
-        nombre,
-        whatsapp,
-        monto: 5000,
-        fecha: fecha.toLocaleDateString(),
-        hora: fecha.toLocaleTimeString(),
-        estado: "activo",
-        empleado: auth.currentUser.email,
-        uid_empleado: auth.currentUser.uid
-      };
-
-      try {
-        await addDoc(collection(db, "clientes"), cliente);
-        alert("Cliente guardado correctamente.");
-        document.getElementById("nombre").value = "";
-        document.getElementById("whatsapp").value = "";
-      } catch (err) {
-        errorCarga.textContent = "Error al guardar cliente: " + err.message;
-        errorCarga.classList.remove("hidden");
+      if (nombre.trim() === "") {
+        document.getElementById("clienteError").innerText = "Nombre requerido.";
+        return;
       }
-    });
+      clientes.push({ nombre, cargadoPor: usuario });
+      pendientes.push({ nombre });
+      document.getElementById("clienteError").innerText = "";
+      document.getElementById("clienteNombre").value = "";
+      renderClientes();
+      renderPendientes();
+    }
 
-    function cargarClientes() {
-      const q = query(collection(db, "clientes"), orderBy("fecha", "desc"));
-      onSnapshot(q, (snapshot) => {
-        listaClientes.innerHTML = "";
-        snapshot.forEach((doc) => {
-          const c = doc.data();
-          listaClientes.innerHTML += `
-            <div class="cliente">
-              <strong>${c.nombre}</strong><br/>
-              WhatsApp: ${c.whatsapp}<br/>
-              Monto: $${c.monto}<br/>
-              Fecha: ${c.fecha} ${c.hora}<br/>
-              Estado: ${c.estado}<br/>
-              Empleado: ${c.empleado}
-            </div>
-          `;
-        });
+    function renderClientes() {
+      const cont = document.getElementById("listaClientes");
+      cont.innerHTML = "";
+      clientes.forEach(c => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `<strong>${c.nombre}</strong><br><small>Cargado por: ${c.cargadoPor}</small>`;
+        cont.appendChild(div);
+      });
+    }
+
+    function renderPendientes() {
+      const cont = document.getElementById("listaPendientes");
+      cont.innerHTML = "";
+      pendientes.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML =         <strong>${p.nombre}</strong><br><small>Contacto pendiente por WhatsApp</small>`;
+        cont.appendChild(div);
       });
     }
   </script>
